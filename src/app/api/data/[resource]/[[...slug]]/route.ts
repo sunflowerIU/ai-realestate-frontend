@@ -22,6 +22,8 @@ const adminActions = new Set(["suspend", "ban", "activate", "revoke-sessions"]);
 function allowed(resource: string, slug: string[], method: string) {
   if (agentResources.has(resource)) {
     if (slug.length === 0) return method === "GET" || method === "POST";
+    if (resource === "properties" && slug.length === 1 && slug[0] === "archived")
+      return method === "GET";
     if (slug.length === 1 && uuid.test(slug[0]))
       return (
         ["GET", "PATCH", "DELETE"].includes(method) &&
@@ -31,8 +33,8 @@ function allowed(resource: string, slug: string[], method: string) {
       resource === "properties" &&
       slug.length === 2 &&
       uuid.test(slug[0]) &&
-      slug[1] === "archive" &&
-      method === "POST"
+      ((slug[1] === "archive" && method === "POST") ||
+        (slug[1] === "delete" && method === "DELETE"))
     );
   }
   if (resource === "admin-agents") {

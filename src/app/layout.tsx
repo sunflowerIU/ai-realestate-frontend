@@ -3,6 +3,7 @@ import "./globals.css";
 import "../styles/app.css";
 import "./marketing.css";
 import "./dashboard-theme.css";
+import { ToastViewport } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
   title: { default: "Copy Kalam — Find the match in your records", template: "%s | Copy Kalam" },
@@ -10,5 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" suppressHydrationWarning><body>{children}</body></html>;
+  return <html lang="en" suppressHydrationWarning><body>{children}<ToastViewport /></body></html>;
 }

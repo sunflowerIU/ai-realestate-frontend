@@ -38,6 +38,38 @@ test("agent session never receives platform admin navigation", async ({ page, co
   await expect(page.getByRole("button", { name: /add client/i }).first()).toBeVisible();
 });
 
+test("archived properties show edit and delete actions", async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: "ma_access", value: "test-only-cookie", url: new URL(baseURL!).origin, httpOnly: true, sameSite: "Strict" }]);
+  await page.route("**/api/session/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: { id: "agent-test", name: "Test Agent", email: "agent@example.com", role: "AGENT", status: "ACTIVE" } }) }));
+  await page.route("**/api/data/**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }) }));
+  let deleted = false;
+  const id = "00000000-0000-4000-8000-000000000001";
+  await page.route("**/api/data/properties/**", (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname.endsWith(`/${id}/delete`)) {
+      expect(route.request().method()).toBe("DELETE");
+      deleted = true;
+      return route.fulfill({ status: 204 });
+    }
+    if (url.pathname.endsWith("/archived"))
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ items: deleted ? [] : [{ id, title: "Archived house", status: "ARCHIVED", propertyType: "HOUSE", transactionType: "SALE" }], pagination: { page: 1, pageSize: 20, total: deleted ? 0 : 1, totalPages: deleted ? 0 : 1 } }) });
+    return route.continue();
+  });
+  await page.goto("/workspace/archived");
+  await expect(page.getByRole("link", { name: "Archived" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("cell", { name: "Archived house" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "S.N" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Actions" })).toBeVisible();
+  await expect(page.getByRole("row", { name: /Archived house/ }).getByRole("cell").first()).toHaveText("1");
+  await page.getByRole("button", { name: "Record actions" }).click();
+  await expect(page.getByRole("menuitem", { name: "Edit" })).toBeVisible();
+  await page.getByRole("menuitem", { name: "Delete property" }).click();
+  await page.getByPlaceholder("yes").fill("yes");
+  await page.getByRole("button", { name: "Delete property" }).click();
+  await expect(page.getByText("No archived properties yet.")).toBeVisible();
+  expect(deleted).toBe(true);
+});
+
 test("workspace theme and sidebar choices persist", async ({ page, context, isMobile }) => {
   await context.addCookies([{ name: "ma_access", value: "test-only-cookie", url: "http://127.0.0.1:3101", httpOnly: true, sameSite: "Strict" }]);
   await page.route("**/api/session/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: { id: "agent-test", name: "Test Agent", email: "agent@example.com", role: "AGENT", status: "ACTIVE" } }) }));

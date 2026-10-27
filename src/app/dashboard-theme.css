@@ -123,6 +123,53 @@
 .dialog-content .button-outline:hover{background:var(--app-soft)}
 [data-theme="dark"] .dialog-content .field-input{background:var(--app-surface);color:var(--app-ink);border-color:var(--app-border)}
 [data-theme="dark"] .dialog-content .button-dark{background:#577df0;color:#fff}
+.row-actions-trigger{width:34px;height:34px;display:grid;place-items:center;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--app-muted);cursor:pointer}
+.row-actions-trigger:hover,.row-actions-trigger[aria-expanded="true"]{background:var(--app-soft);border-color:var(--app-border);color:var(--app-ink)}
+.row-actions-trigger:focus-visible,.row-actions-menu button:focus-visible{outline:2px solid var(--app-accent);outline-offset:2px}
+.row-actions-menu{position:fixed;z-index:65;min-width:164px;padding:5px;border:1px solid #dce4ef;border-radius:10px;background:#fff;box-shadow:0 14px 38px #14254330}
+.row-actions-menu button{width:100%;min-height:37px;display:flex;align-items:center;gap:10px;padding:0 11px;border:0;border-radius:6px;background:transparent;color:#172338;text-align:left;font-size:12px;font-weight:650;cursor:pointer}
+.row-actions-menu button:hover{background:#edf2f9}
+.row-actions-menu .row-actions-destructive{color:#b5384d}
+.row-actions-menu .row-actions-destructive:hover{background:#fff0f2}
+[data-theme="dark"] .row-actions-menu{background:#142038;border-color:#2a3a57;box-shadow:0 14px 38px #03091680}
+[data-theme="dark"] .row-actions-menu button{color:#eef3ff}
+[data-theme="dark"] .row-actions-menu button:hover{background:#1b2b47}
+[data-theme="dark"] .row-actions-menu .row-actions-destructive{color:#ff9bab}
+[data-theme="dark"] .row-actions-menu .row-actions-destructive:hover{background:#4c2638}
+.dialog-content.delete-dialog{width:min(94vw,440px);padding:32px 34px 28px;border:1px solid var(--app-border);overflow-y:auto}
+.delete-dialog-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:13px;background:#fff0f2;color:#c63850;margin-bottom:21px}
+.delete-dialog-eyebrow{color:#bb4255;font-size:10px;font-weight:850;letter-spacing:.16em}
+.delete-dialog .dialog-title{font-size:31px;line-height:1.1;letter-spacing:-.04em;margin:8px 40px 11px 0}
+.delete-dialog .dialog-description{font-size:13px;line-height:1.65}
+.delete-dialog-confirmation{margin-top:24px;display:grid;gap:9px}
+.delete-dialog-confirmation label{font-size:12px;color:var(--app-ink);font-weight:650}
+.delete-dialog-confirmation strong{display:inline-block;padding:2px 6px;border-radius:4px;background:var(--app-soft);font-weight:850}
+.delete-dialog-confirmation .field-input{width:100%;min-height:44px;padding:0 12px;background:var(--app-surface);color:var(--app-ink);border:1px solid var(--app-border)}
+.delete-dialog-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:27px;padding-top:20px;border-top:1px solid var(--app-border)}
+.delete-dialog-actions button{min-height:41px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;font-size:12px;font-weight:750;cursor:pointer}
+.delete-dialog-cancel{border:1px solid var(--app-border);background:var(--app-surface);color:var(--app-ink)}
+.delete-dialog-cancel:hover{background:var(--app-soft)}
+.delete-dialog-submit{border:1px solid #b9364d;background:#c63850;color:#fff;box-shadow:0 5px 12px #c6385026}
+.delete-dialog-submit:hover:not(:disabled){background:#ad2e46}
+.delete-dialog-actions button:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+[data-theme="dark"] .delete-dialog-icon{background:#4c2638;color:#ff9bab}
+[data-theme="dark"] .delete-dialog-eyebrow{color:#ff9bab}
+@media(max-width:650px){.dialog-content.delete-dialog{padding:26px 22px 22px}.delete-dialog .dialog-title{font-size:27px}}
+.toast-viewport{position:fixed;z-index:100;top:22px;right:22px;width:min(390px,calc(100vw - 32px));display:grid;gap:10px;pointer-events:none}
+.app-toast{display:grid;grid-template-columns:34px minmax(0,1fr) 28px;align-items:center;gap:10px;min-height:58px;padding:11px 12px;border:1px solid #dce4ef;border-radius:11px;background:#fff;color:#172338;box-shadow:0 16px 40px #07152930;pointer-events:auto;animation:toastIn .2s ease-out}
+.app-toast-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:9px}
+.app-toast-success .app-toast-icon{background:#e5f4e9;color:#258451}
+.app-toast-error .app-toast-icon{background:#fff0f2;color:#be3c52}
+.app-toast-message{font-size:12px;font-weight:650;line-height:1.45;overflow-wrap:anywhere}
+.app-toast button{width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:6px;background:transparent;color:#65748c;cursor:pointer}
+.app-toast button:hover{background:#edf2f9;color:#172338}
+[data-theme="dark"] .app-toast{background:#142038;border-color:#2a3a57;color:#eef3ff;box-shadow:0 16px 40px #03091680}
+[data-theme="dark"] .app-toast-success .app-toast-icon{background:#224438;color:#93dfae}
+[data-theme="dark"] .app-toast-error .app-toast-icon{background:#4c2638;color:#ff9bab}
+[data-theme="dark"] .app-toast button:hover{background:#1b2b47;color:#eef3ff}
+@keyframes toastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:650px){.toast-viewport{top:12px;right:16px}}
+@media(prefers-reduced-motion:reduce){.app-toast{animation:none}}
 .admin-summary{background:#e7edff;border-color:#cedbf7;color:#1c3470;border-radius:8px}
 .admin-summary strong{font-size:58px}
 .admin-actions button{border-radius:8px}
