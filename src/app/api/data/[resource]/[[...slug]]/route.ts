@@ -30,10 +30,10 @@ function allowed(resource: string, slug: string[], method: string) {
         (method !== "DELETE" || ["clients", "activities"].includes(resource))
       );
     return (
-      resource === "properties" &&
+      ["properties", "requirements"].includes(resource) &&
       slug.length === 2 &&
       uuid.test(slug[0]) &&
-      ((slug[1] === "archive" && method === "POST") ||
+      ((resource === "properties" && slug[1] === "archive" && method === "POST") ||
         (slug[1] === "delete" && method === "DELETE"))
     );
   }

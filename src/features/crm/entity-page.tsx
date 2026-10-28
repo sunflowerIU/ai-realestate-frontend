@@ -92,6 +92,7 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [searchBy, setSearchBy] = useState<"details" | "location" | "client">("details");
   const deferredSearch = useDeferredValue(search.trim());
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("newest");
@@ -134,6 +135,7 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
     pageSize: PAGE_SIZE,
     sort,
     ...(config.searchable && deferredSearch ? { search: deferredSearch } : {}),
+    ...(config.key === "requirements" && deferredSearch ? { searchBy } : {}),
     ...(status
       ? { [config.key === "activities" ? "type" : "status"]: status }
       : {}),
@@ -169,7 +171,7 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
       actionRecord(
         config.endpoint,
         id,
-        kind === "archive" ? "archive" : kind === "permanent-delete" ? "delete" : "",
+        kind === "archive" ? "archive" : kind === "permanent-delete" || config.key === "requirements" ? "delete" : "",
         kind === "archive" ? "POST" : "DELETE",
       ),
     onSuccess: async () => {
@@ -271,7 +273,11 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
             <Search size={17} />
             <span className="sr-only">Search {config.title}</span>
             <Input
-              placeholder={`Search ${config.title.toLowerCase()}…`}
+              placeholder={config.key === "requirements"
+                ? searchBy === "location" ? "Search province, district, municipality, or locality…"
+                  : searchBy === "client" ? "Search buyer or saved client name…"
+                    : "Search title or notes…"
+                : `Search ${config.title.toLowerCase()}…`}
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
@@ -281,6 +287,23 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
           </label>
         )}
         <div className="toolbar-filters">
+          {config.key === "requirements" && (
+            <label>
+              <span className="sr-only">Search by</span>
+              <select
+                aria-label="Search by"
+                value={searchBy}
+                onChange={(event) => {
+                  setSearchBy(event.target.value as typeof searchBy);
+                  setPage(1);
+                }}
+              >
+                <option value="details">Title or notes</option>
+                <option value="location">Preferred location</option>
+                <option value="client">Buyer or client name</option>
+              </select>
+            </label>
+          )}
           {config.statuses && (
             <label>
               <span className="sr-only">Filter by status</span>

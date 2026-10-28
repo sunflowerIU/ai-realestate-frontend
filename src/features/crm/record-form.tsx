@@ -15,6 +15,8 @@ import type { RecordRow } from "@/lib/api/client";
 import { provinceNamesByNumber, provinceNumber, type FieldConfig, type ResourceConfig } from "./config";
 import { ReferenceInput } from "./reference-input";
 import { NepaliDateTimeInput } from "./nepali-datetime-input";
+import { PreferredLocationsInput } from "./preferred-locations-input";
+import { parsePreferredLocations, preferredLocationsError } from "./preferred-locations";
 
 const moneyPattern = /^(?:0|[1-9]\d{0,17})$/;
 const decimalPattern = /^(?:0|[1-9]\d{0,17})(?:\.\d{1,6})?$/;
@@ -35,7 +37,9 @@ function exactSquareMeters(sqMm: unknown) {
 
 function initialValue(field: FieldConfig, row?: RecordRow) {
   if (!row)
-    return field.kind === "datetime" &&
+    return field.kind === "locations"
+      ? "[]"
+      : field.kind === "datetime" &&
       ["occurredAt", "visitedAt"].includes(field.key)
       ? localInputDate(new Date().toISOString())
       : "";
@@ -46,8 +50,8 @@ function initialValue(field: FieldConfig, row?: RecordRow) {
   }
   if (field.kind === "locations")
     return Array.isArray(row[field.key])
-      ? (row[field.key] as string[]).join(", ")
-      : "";
+      ? JSON.stringify(parsePreferredLocations(row[field.key]))
+      : "[]";
   if (field.key === "minLandAreaSqM")
     return exactSquareMeters(row.minLandAreaSqMm);
   if (field.key === "maxLandAreaSqM")
@@ -129,15 +133,12 @@ function schemaFor(config: ResourceConfig) {
           path: [field.key],
           message: "Enter a valid date and time.",
         });
-      if (
-        value &&
-        field.kind === "locations" &&
-        value.split(",").filter(Boolean).length > 20
-      )
+      const locationError = field.kind === "locations" ? preferredLocationsError(value) : null;
+      if (locationError)
         ctx.addIssue({
           code: "custom",
           path: [field.key],
-          message: "Use no more than 20 locations.",
+          message: locationError,
         });
     }
     if (
@@ -181,6 +182,7 @@ function payloadFor(
   config: ResourceConfig,
   values: Record<string, string>,
   editing: boolean,
+  row?: RecordRow,
 ) {
   const payload: Record<string, unknown> = {};
   for (const field of config.fields) {
@@ -188,13 +190,10 @@ function payloadFor(
     if (field.key === "landAreaValue" || field.key === "landAreaUnit") continue;
     if (editing && config.key === "requirements" && field.key === "clientId")
       continue;
+    if (editing && field.kind === "locations" && !Array.isArray(row?.[field.key]) && value === "[]")
+      continue;
     if (field.kind === "locations")
-      payload[field.key] = value
-        ? value
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean)
-        : [];
+      payload[field.key] = parsePreferredLocations(value);
     else if (field.kind === "integer")
       payload[field.key] = value ? Number(value) : null;
     else if (field.kind === "datetime")
@@ -250,7 +249,7 @@ export function RecordForm({
   const form = useForm({
     defaultValues: defaults,
     validators: { onSubmit: schema },
-    onSubmit: ({ value }) => onSave(payloadFor(config, value, Boolean(row))),
+    onSubmit: ({ value }) => onSave(payloadFor(config, value, Boolean(row), row)),
     onSubmitInvalid: () => toast.error("Please correct the highlighted fields."),
   });
   return (
@@ -337,6 +336,14 @@ export function RecordForm({
                           ? form.state.values.clientId
                           : undefined
                       }
+                    />
+                  ) : field.kind === "locations" ? (
+                    <PreferredLocationsInput
+                      id={id}
+                      value={control.state.value}
+                      onBlur={control.handleBlur}
+                      onChange={control.handleChange}
+                      invalid={Boolean(error)}
                     />
                   ) : field.kind === "select" ? (
                     <select

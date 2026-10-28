@@ -57,6 +57,99 @@ test("buyer requirement keeps contact details and a saved client link", async ({
   });
 });
 
+test("buyer requirement sends structured preferred areas with multiple localities", async ({ page, baseURL }) => {
+  await mockWorkspace(page, baseURL!);
+  await page.goto("/workspace/requirements");
+  await page.getByRole("button", { name: "Add requirement" }).first().click();
+  await page.getByLabel("Buyer name").fill("New buyer");
+  await page.getByLabel("Buyer email").fill("buyer@example.com");
+  await page.getByLabel("Buyer phone number").fill("9812345678");
+  await page.getByLabel("For").selectOption("SALE");
+  await page.getByLabel("Property type").selectOption("LAND");
+
+  await page.getByRole("button", { name: "Add preferred area" }).click();
+  const first = page.getByText("Preferred area 1").locator("..");
+  const firstArea = first.locator("..");
+  await firstArea.getByLabel("Province").selectOption("Bagmati");
+  await firstArea.getByLabel("District").selectOption("Kathmandu");
+  await firstArea.getByLabel("Municipality / metropolitan city").selectOption("Kathmandu Metropolitan City");
+  await firstArea.getByLabel("Localities").fill("Baneshwor, Maitidevi");
+
+  await page.getByRole("button", { name: "Add preferred area" }).click();
+  const second = page.getByText("Preferred area 2").locator("..").locator("..");
+  await second.getByLabel("Province").selectOption("Bagmati");
+  await second.getByLabel("District").selectOption("Makwanpur");
+  await second.getByLabel("Municipality / metropolitan city").selectOption("Hetauda Sub-Metropolitan City");
+  await second.getByLabel("Localities").fill("Shantinagar");
+
+  const request = page.waitForRequest((request) => request.url().endsWith("/api/data/requirements") && request.method() === "POST");
+  await page.getByRole("button", { name: "Add requirement" }).last().click();
+  expect((await request).postDataJSON().preferredLocations).toEqual([
+    { province: "Bagmati", district: "Kathmandu", municipality: "Kathmandu Metropolitan City", localities: ["Baneshwor", "Maitidevi"] },
+    { province: "Bagmati", district: "Makwanpur", municipality: "Hetauda Sub-Metropolitan City", localities: ["Shantinagar"] },
+  ]);
+});
+
+test("buyer requirement restores preferred areas when editing", async ({ page, baseURL }) => {
+  await mockWorkspace(page, baseURL!);
+  await page.route("**/api/data/requirements?*", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      items: [{
+        id: "requirement-1",
+        title: "Land for buyer",
+        buyerName: "New buyer",
+        buyerEmail: "buyer@example.com",
+        buyerPhoneNo: "9812345678",
+        transactionType: "SALE",
+        propertyType: "LAND",
+        preferredLocations: [{
+          id: "area-1",
+          province: "Bagmati",
+          district: "Makwanpur",
+          municipality: "Hetauda Sub-Metropolitan City",
+          localities: ["Shantinagar"],
+        }],
+      }],
+      pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+    }),
+  }));
+  await page.goto("/workspace/requirements");
+  await page.getByRole("button", { name: "Record actions" }).click();
+  await page.getByRole("menuitem", { name: "Edit" }).click();
+  const area = page.getByText("Preferred area 1").locator("..").locator("..");
+  await expect(area.getByLabel("District")).toHaveValue("Makwanpur");
+  await expect(area.getByLabel("Localities")).toHaveValue("Shantinagar");
+  await area.getByLabel("Localities").fill("Shantinagar, Huprachaur");
+  const request = page.waitForRequest((request) => request.url().endsWith("/api/data/requirements/requirement-1") && request.method() === "PATCH");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  expect((await request).postDataJSON().preferredLocations).toEqual([{
+    province: "Bagmati",
+    district: "Makwanpur",
+    municipality: "Hetauda Sub-Metropolitan City",
+    localities: ["Shantinagar", "Huprachaur"],
+  }]);
+});
+
+test("requirement search sends the selected search field", async ({ page, baseURL }) => {
+  await mockWorkspace(page, baseURL!);
+  await page.goto("/workspace/requirements");
+  await page.getByRole("combobox", { name: "Search by" }).selectOption("location");
+  const locationRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return url.pathname === "/api/data/requirements" && url.searchParams.get("search") === "Shanti" && url.searchParams.get("searchBy") === "location";
+  });
+  await page.getByPlaceholder("Search province, district, municipality, or locality…").fill("Shanti");
+  await locationRequest;
+  const clientRequest = page.waitForRequest((request) => {
+    const url = new URL(request.url());
+    return url.pathname === "/api/data/requirements" && url.searchParams.get("search") === "Shanti" && url.searchParams.get("searchBy") === "client";
+  });
+  await page.getByRole("combobox", { name: "Search by" }).selectOption("client");
+  await clientRequest;
+});
+
 test("visit uses the same searchable reference input", async ({ page, baseURL }) => {
   await mockWorkspace(page, baseURL!);
   await page.goto("/workspace/visits");
