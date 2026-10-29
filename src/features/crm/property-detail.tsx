@@ -38,6 +38,8 @@ import { formatBsDate, formatNpr, label } from "@/lib/formatting/nepal";
 import { LoadingIndicator } from "@/features/app/loading-indicator";
 import { provinceNamesByNumber, provinceNumber, resources } from "./config";
 import { RecordForm } from "./record-form";
+import { PropertyMap } from "./property-map";
+import { propertyCoordinates } from "./property-coordinates";
 
 type Property = RecordRow & {
   title: string;
@@ -176,6 +178,7 @@ export function PropertyDetail({ id }: { id: string }) {
     ? `${property.landAreaValue} ${label(property.landAreaUnit)}`
     : squareMeters(property.landAreaSqMm) || "Not specified";
   const price = hasValue(property.priceNpr) ? formatNpr(property.priceNpr) : "Price on request";
+  const mapPosition = propertyCoordinates(property.latitude, property.longitude);
 
   return (
     <div className="mx-auto max-w-[1240px]">
@@ -233,6 +236,10 @@ export function PropertyDetail({ id }: { id: string }) {
                 <div className="border-b border-[var(--app-border)] py-4 even:pl-5 max-[480px]:even:pl-0" key={name}><small className="mb-1.5 block text-[10px] text-[var(--app-muted)]">{name}</small><strong className="text-xs font-bold text-[var(--app-ink)]">{value || "Not specified"}</strong></div>
               ))}
             </div>
+            {mapPosition && <div className="px-7 pb-6 max-[580px]:px-5">
+              <PropertyMap position={mapPosition} />
+              <a className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--app-accent)] hover:underline" href={`https://www.google.com/maps/search/?api=1&query=${mapPosition.latitude}%2C${mapPosition.longitude}`} target="_blank" rel="noopener noreferrer">View in Google Maps <ArrowUpRight size={15} /></a>
+            </div>}
           </section>
 
           <section className={cardClass}>

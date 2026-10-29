@@ -537,6 +537,29 @@
   color: var(--app-ink);
   box-shadow: 0 24px 70px #07152966;
 }
+.dialog-content.record-dialog {
+  --form-scrollbar-thumb: #9aafd2;
+  border-radius: 5px;
+  box-shadow: 0 16px 44px #07152952;
+  scrollbar-width: thin;
+  scrollbar-color: var(--form-scrollbar-thumb) var(--app-soft);
+}
+.record-dialog::-webkit-scrollbar {
+  width: 10px;
+}
+.record-dialog::-webkit-scrollbar-track {
+  background: var(--app-soft);
+}
+.record-dialog::-webkit-scrollbar-thumb {
+  background: var(--form-scrollbar-thumb);
+  border: 2px solid var(--app-soft);
+  border-radius: 5px;
+}
+@media (min-width: 1100px) {
+  .dialog-content.record-dialog {
+    width: min(94vw, 1000px);
+  }
+}
 [data-theme="dark"] .dialog-content {
   --app-surface: #142038;
   --app-ink: #eef3ff;
@@ -545,6 +568,9 @@
   --app-soft: #1b2b47;
   --app-accent: #8eabff;
   color-scheme: dark;
+}
+[data-theme="dark"] .dialog-content.record-dialog {
+  --form-scrollbar-thumb: #5f79a6;
 }
 .dialog-close {
   border-radius: 5px;

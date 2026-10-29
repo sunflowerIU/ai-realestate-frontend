@@ -141,7 +141,6 @@ export const resources: Record<string, ResourceConfig> = {
     eyebrow: "LISTINGS",
     searchable: true,
     statuses: [
-      "DRAFT",
       "ACTIVE",
       "UNDER_NEGOTIATION",
       "RESERVED",
@@ -165,7 +164,6 @@ export const resources: Record<string, ResourceConfig> = {
       select("propertyType", "Property type", propertyTypes, true),
       select("transactionType", "For", transactionTypes, true),
       select("status", "Status", [
-        "DRAFT",
         "ACTIVE",
         "UNDER_NEGOTIATION",
         "RESERVED",
@@ -180,7 +178,7 @@ export const resources: Record<string, ResourceConfig> = {
       },
       {
         ...text("clientName", "Owner / seller name", 50),
-        hint: "Use this when the owner is not saved as a client.",
+        hint: "Filled from a saved client, or enter a name for an unsaved owner.",
       },
       select("province", "Province", provinces),
       select("district", "District", []),
@@ -233,7 +231,13 @@ export const resources: Record<string, ResourceConfig> = {
       },
       text("buyerName", "Buyer name", 150, true),
       { key: "buyerEmail", label: "Buyer email", kind: "email", max: 320 },
-      { key: "buyerPhoneNo", label: "Buyer phone number", kind: "tel", max: 40, required: true },
+      {
+        key: "buyerPhoneNo",
+        label: "Buyer phone number",
+        kind: "tel",
+        max: 40,
+        required: true,
+      },
       text("title", "Requirement title", 200),
       select("transactionType", "For", transactionTypes, true),
       select("propertyType", "Property type", propertyTypes, true),
@@ -448,7 +452,8 @@ resources.archived = {
   listEndpoint: "properties/archived",
   title: "Archived properties",
   eyebrow: "ARCHIVE",
-  description: "Review archived listings, update their details, or delete them permanently.",
+  description:
+    "Review archived listings, update their details, or delete them permanently.",
   statuses: undefined,
   deleteAction: "permanent-delete",
   allowCreate: false,

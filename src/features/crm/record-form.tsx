@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react/no-children-prop -- TanStack Form fields use render props. */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import infoNepal from "info-nepal";
@@ -17,9 +17,12 @@ import { ReferenceInput } from "./reference-input";
 import { NepaliDateTimeInput } from "./nepali-datetime-input";
 import { PreferredLocationsInput } from "./preferred-locations-input";
 import { parsePreferredLocations, preferredLocationsError } from "./preferred-locations";
+import { PropertyLocationField } from "./property-location-field";
+import { propertyCoordinates, type Coordinates } from "./property-coordinates";
 
 const moneyPattern = /^(?:0|[1-9]\d{0,17})$/;
 const decimalPattern = /^(?:0|[1-9]\d{0,17})(?:\.\d{1,6})?$/;
+const landExcludedFields = ["builtUpAreaSqM", "bedrooms", "bathrooms", "facing"];
 
 function exactSquareMeters(sqMm: unknown) {
   if (sqMm === null || sqMm === undefined || sqMm === "") return "";
@@ -182,12 +185,15 @@ function payloadFor(
   config: ResourceConfig,
   values: Record<string, string>,
   editing: boolean,
+  mapPosition: Coordinates | null,
   row?: RecordRow,
 ) {
   const payload: Record<string, unknown> = {};
   for (const field of config.fields) {
     const value = values[field.key]?.trim() ?? "";
     if (field.key === "landAreaValue" || field.key === "landAreaUnit") continue;
+    if (config.key === "properties" && values.propertyType === "LAND" && landExcludedFields.includes(field.key))
+      continue;
     if (editing && config.key === "requirements" && field.key === "clientId")
       continue;
     if (editing && field.kind === "locations" && !Array.isArray(row?.[field.key]) && value === "[]")
@@ -216,13 +222,16 @@ function payloadFor(
       payload[field.key] = value || null;
     if (field.kind === "select" && value) payload[field.key] = value;
   }
-  if (config.key === "properties")
+  if (config.key === "properties") {
     payload.landArea =
       values.landAreaValue && values.landAreaUnit
         ? { value: values.landAreaValue.trim(), unit: values.landAreaUnit }
         : null;
-  if (config.key === "properties" && values.propertyType === "LAND")
-    payload.facing = null;
+    if (mapPosition || (editing && propertyCoordinates(row?.latitude, row?.longitude))) {
+      payload.latitude = mapPosition ? Number(mapPosition.latitude.toFixed(6)) : null;
+      payload.longitude = mapPosition ? Number(mapPosition.longitude.toFixed(6)) : null;
+    }
+  }
   if (config.key === "notes") payload.type = "NOTE";
   return payload;
 }
@@ -238,10 +247,17 @@ export function RecordForm({
   onSave: (payload: Record<string, unknown>) => void;
   saving: boolean;
 }) {
+  const [mapPosition, setMapPosition] = useState<Coordinates | null>(() => propertyCoordinates(row?.latitude, row?.longitude));
   const defaults = useMemo(
     () =>
       Object.fromEntries(
-        config.fields.map((field) => [field.key, initialValue(field, row)]),
+        config.fields.map((field) => [
+          field.key,
+          !row && field.key === "status" &&
+          (config.key === "properties" || config.key === "requirements")
+            ? "ACTIVE"
+            : initialValue(field, row),
+        ]),
       ) as Record<string, string>,
     [config, row],
   );
@@ -249,7 +265,7 @@ export function RecordForm({
   const form = useForm({
     defaultValues: defaults,
     validators: { onSubmit: schema },
-    onSubmit: ({ value }) => onSave(payloadFor(config, value, Boolean(row), row)),
+    onSubmit: ({ value }) => onSave(payloadFor(config, value, Boolean(row), mapPosition, row)),
     onSubmitInvalid: () => toast.error("Please correct the highlighted fields."),
   });
   return (
@@ -283,7 +299,7 @@ export function RecordForm({
                 field.key === "clientId";
               const propertyValues = form.state.values;
               const isPropertyField = config.key === "properties";
-              if (isPropertyField && field.key === "facing" && propertyValues.propertyType === "LAND")
+              if (isPropertyField && propertyValues.propertyType === "LAND" && landExcludedFields.includes(field.key))
                 return null;
               const options = isPropertyField && field.key === "district"
                 ? infoNepal.districtsOfProvince[provinceNumber(propertyValues.province) ?? ""] ?? []
@@ -315,20 +331,24 @@ export function RecordForm({
                         if (field.key === "clientId")
                           form.setFieldValue("requirementId", "");
                       }}
-                      onSelect={
-                        config.key === "requirements" && field.key === "clientId"
-                          ? (client) => {
-                              for (const [target, source] of [
-                                ["buyerName", "name"],
-                                ["buyerEmail", "email"],
-                                ["buyerPhoneNo", "phone"],
-                              ]) {
-                                if (!form.state.values[target] && client[source])
-                                  form.setFieldValue(target, String(client[source]));
-                              }
-                            }
-                          : undefined
-                      }
+                      onSelect={field.reference === "clients" ? (client) => {
+                        const nameField = config.key === "properties" && field.key === "ownerClientId"
+                          ? "clientName"
+                          : config.key === "requirements" && field.key === "clientId"
+                            ? "buyerName"
+                            : null;
+                        if (nameField && client.name)
+                          form.setFieldValue(nameField, String(client.name));
+                        if (config.key === "requirements" && field.key === "clientId") {
+                          for (const [target, source] of [
+                            ["buyerEmail", "email"],
+                            ["buyerPhoneNo", "phone"],
+                          ]) {
+                            if (!form.state.values[target] && client[source])
+                              form.setFieldValue(target, String(client[source]));
+                          }
+                        }
+                      } : undefined}
                       disabled={disabled}
                       invalid={Boolean(error)}
                       clientId={
@@ -360,7 +380,8 @@ export function RecordForm({
                         } else if (isPropertyField && field.key === "district") {
                           form.setFieldValue("municipality", "");
                         } else if (isPropertyField && field.key === "propertyType" && value === "LAND") {
-                          form.setFieldValue("facing", "");
+                          for (const excludedField of landExcludedFields)
+                            form.setFieldValue(excludedField, "");
                         }
                       }}
                       disabled={selectDisabled}
@@ -439,6 +460,7 @@ export function RecordForm({
         ))}
       </div>}
       />
+      {config.key === "properties" && <PropertyLocationField position={mapPosition} onChange={setMapPosition} />}
       <div className="record-form-footer">
         <span>
           Enter times in Nepal time. Dates display in B.S. after saving.

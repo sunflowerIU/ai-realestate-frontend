@@ -509,7 +509,7 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
         </div>
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="record-dialog">
           <div className="dialog-heading">
             <div className="app-eyebrow">
               {selected ? "EDIT RECORD" : "NEW RECORD"}

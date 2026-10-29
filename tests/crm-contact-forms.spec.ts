@@ -34,7 +34,69 @@ test("property accepts a typed owner and sends clientName", async ({ page, baseU
   await page.getByLabel("Owner / seller name").fill("Local owner");
   const request = page.waitForRequest((request) => request.url().endsWith("/api/data/properties") && request.method() === "POST");
   await page.getByRole("button", { name: "Add property" }).last().click();
-  expect((await request).postDataJSON()).toMatchObject({ title: "Hill house", clientName: "Local owner", ownerClientId: null });
+  const payload = (await request).postDataJSON();
+  expect(payload).toMatchObject({ title: "Hill house", status: "ACTIVE", clientName: "Local owner", ownerClientId: null });
+  expect(payload).not.toHaveProperty("latitude");
+  expect(payload).not.toHaveProperty("longitude");
+});
+
+test("saved owner fills the name and land omits building fields", async ({ page, baseURL }) => {
+  await mockWorkspace(page, baseURL!);
+  await page.goto("/workspace/properties");
+  await page.getByRole("button", { name: "Add property" }).first().click();
+  await expect(page.getByLabel("Status", { exact: true })).toHaveValue("ACTIVE");
+  await expect(page.getByLabel("Status", { exact: true }).getByRole("option", { name: "Draft" })).toHaveCount(0);
+  await page.getByLabel("Listing title").fill("Land plot");
+  await page.getByLabel("For").selectOption("SALE");
+  await page.getByLabel("Property type").selectOption("HOUSE");
+  await page.getByLabel("Built-up area (m²)").fill("125");
+  await page.getByLabel("Bedrooms").fill("3");
+  await page.getByLabel("Bathrooms").fill("2");
+  await page.getByLabel("Facing").selectOption("EAST");
+  await page.getByLabel("Owner / seller name").fill("Previous owner");
+  await page.getByLabel("Saved owner / seller").fill("Maya");
+  await page.getByRole("option", { name: "Maya Tamang" }).click();
+  await expect(page.getByLabel("Owner / seller name")).toHaveValue("Maya Tamang");
+  await page.getByLabel("Property type").selectOption("LAND");
+  for (const field of ["Built-up area (m²)", "Bedrooms", "Bathrooms", "Facing"])
+    await expect(page.getByLabel(field)).toHaveCount(0);
+  await expect(page.getByLabel("Add map location (optional)")).toBeVisible();
+  expect(await page.getByLabel("Add map location (optional)").evaluate((map) => {
+    const description = document.getElementById("field-description");
+    return description !== null && Boolean(description.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING);
+  })).toBe(true);
+  const request = page.waitForRequest((item) => item.url().endsWith("/api/data/properties") && item.method() === "POST");
+  await page.getByRole("button", { name: "Add property" }).last().click();
+  const payload = (await request).postDataJSON();
+  expect(payload).toMatchObject({ propertyType: "LAND", status: "ACTIVE", ownerClientId: clientId, clientName: "Maya Tamang" });
+  for (const field of ["builtUpAreaSqM", "bedrooms", "bathrooms", "facing"])
+    expect(payload).not.toHaveProperty(field);
+});
+
+test("property map loads on request and saves a selected location", async ({ page, baseURL }) => {
+  await mockWorkspace(page, baseURL!);
+  await page.route("https://*.tile.openstreetmap.org/**", (route) => route.abort());
+  await page.goto("/workspace/properties");
+  await page.getByRole("button", { name: "Add property" }).first().click();
+  await expect(page.getByLabel("Add map location (optional)")).toBeVisible();
+  await expect(page.getByLabel("Latitude", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Longitude", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Choose property location on map")).toHaveCount(0);
+  await page.getByLabel("Listing title").fill("Mapped house");
+  await page.getByLabel("Property type").selectOption("HOUSE");
+  await page.getByLabel("For").selectOption("SALE");
+  await page.getByLabel("Owner / seller name").fill("Local owner");
+  await page.getByLabel("Add map location (optional)").check();
+  const map = page.getByLabel("Choose property location on map");
+  await expect(map).toBeVisible();
+  await expect(page.getByText("No location selected yet.")).toBeVisible();
+  await map.click({ position: { x: 150, y: 120 } });
+  await expect(page.getByText(/Selected: 27\./)).toBeVisible();
+  const request = page.waitForRequest((item) => item.url().endsWith("/api/data/properties") && item.method() === "POST");
+  await page.getByRole("button", { name: "Add property" }).last().click();
+  const payload = (await request).postDataJSON();
+  expect(Number(payload.latitude)).toBeGreaterThan(27);
+  expect(Number(payload.longitude)).toBeGreaterThan(85);
 });
 
 test("buyer requirement keeps contact details and a saved client link", async ({ page, baseURL }) => {
