@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable react/no-children-prop -- TanStack Form fields use render props. */
 
-import { useDeferredValue, useState } from "react";
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { actionRecord, listRecords, writeRecord, type RecordRow } from "@/lib/api/client";
 import { formatBsDate, label } from "@/lib/formatting/nepal";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { LoadingIndicator } from "@/features/app/loading-indicator";
 
 const schema = z.object({ name: z.string().trim().min(2, "Enter the agent’s name.").max(100), email: z.email("Enter a valid email address.").max(320), password: z.string().min(8, "Use at least 8 characters.").max(128) });
@@ -25,7 +26,7 @@ export function AgentManagement() {
   const cache = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const term = useDeferredValue(search.trim());
+  const term = useDebouncedValue(search.trim());
   const [status, setStatus] = useState("");
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecordRow | null>(null);

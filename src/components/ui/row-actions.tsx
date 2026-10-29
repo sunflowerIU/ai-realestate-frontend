@@ -21,7 +21,7 @@ export function RowActions({ actions }: { actions: RowAction[] }) {
 
   useEffect(() => {
     if (!position) return;
-    menu.current?.querySelector("button")?.focus();
+    menu.current?.querySelector("button")?.focus({ preventScroll: true });
     function dismiss(event: PointerEvent) {
       if (
         trigger.current?.contains(event.target as Node) ||
@@ -40,12 +40,12 @@ export function RowActions({ actions }: { actions: RowAction[] }) {
     }
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("keydown", onKeyDown);
-    window.addEventListener("scroll", close, true);
+    window.addEventListener("scroll", close);
     window.addEventListener("resize", close);
     return () => {
       document.removeEventListener("pointerdown", dismiss);
       document.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("scroll", close);
       window.removeEventListener("resize", close);
     };
   }, [position]);

@@ -189,7 +189,7 @@ export function AppShell({
   const currentPage =
     pathname === "/workspace" || pathname === "/admin"
       ? "Overview"
-      : nav.find((item) => item.href === pathname)?.label || "Workspace";
+      : nav.find((item) => item.href === pathname || (item.href !== "/workspace" && item.href !== "/admin" && pathname.startsWith(`${item.href}/`)))?.label || "Workspace";
 
   return (
     <div className={`app-root ${collapsed ? "sidebar-collapsed" : ""}`}>
@@ -227,7 +227,7 @@ export function AppShell({
         >
           {nav.map((item) => {
             const Icon = item.icon;
-            const active = pathname === item.href;
+            const active = pathname === item.href || (item.href !== "/workspace" && item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
             return (
               <Link
                 key={item.href}

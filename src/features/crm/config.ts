@@ -117,6 +117,8 @@ export const resources: Record<string, ResourceConfig> = {
       { key: "name", label: "Name" },
       { key: "phone", label: "Phone" },
       { key: "email", label: "Email" },
+      { key: "address", label: "Address" },
+      { key: "notes", label: "Notes" },
       { key: "status", label: "Status", kind: "status" },
       { key: "createdAt", label: "Added", kind: "date" },
     ],

@@ -1,6 +1,7 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   useMutation,
   useQueries,
@@ -40,6 +41,7 @@ import {
   type RecordRow,
 } from "@/lib/api/client";
 import { formatBsDate, formatNpr, label } from "@/lib/formatting/nepal";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import type { ColumnConfig, ResourceConfig } from "./config";
 import { RecordForm } from "./record-form";
 import { LoadingIndicator } from "@/features/app/loading-indicator";
@@ -89,11 +91,13 @@ function valueFor(row: RecordRow, column: ColumnConfig, lookups: Lookups) {
 }
 
 export function EntityPage({ config }: { config: ResourceConfig }) {
+  const router = useRouter();
+  const rowOpensDetail = ["requirements", "properties", "archived"].includes(config.key);
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchBy, setSearchBy] = useState<"details" | "location" | "client">("details");
-  const deferredSearch = useDeferredValue(search.trim());
+  const debouncedSearch = useDebouncedValue(search.trim());
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("newest");
   const [selected, setSelected] = useState<RecordRow | null>(null);
@@ -134,8 +138,8 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
     page,
     pageSize: PAGE_SIZE,
     sort,
-    ...(config.searchable && deferredSearch ? { search: deferredSearch } : {}),
-    ...(config.key === "requirements" && deferredSearch ? { searchBy } : {}),
+    ...(config.searchable && debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(config.key === "requirements" && debouncedSearch ? { searchBy } : {}),
     ...(status
       ? { [config.key === "activities" ? "type" : "status"]: status }
       : {}),
@@ -200,11 +204,33 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
       ...config.columns.map((column) => ({
         accessorKey: column.key,
         header: column.label,
-        cell: (info: CellContext<typeof features, RecordRow>) => (
-          <span className={column.key === "notes" ? "cell-clip" : ""}>
-            {valueFor(info.row.original, column, lookups)}
-          </span>
-        ),
+        cell: (info: CellContext<typeof features, RecordRow>) => {
+          const row = info.row.original;
+          if (config.key === "clients" && column.key === "phone") {
+            const alternate = String(row.alternatePhone || "").trim();
+            return (
+              <span className="client-phone-stack">
+                <span>{valueFor(row, column, lookups)}</span>
+                {alternate && <span>{alternate}</span>}
+              </span>
+            );
+          }
+          if (config.key === "clients" && column.key === "notes") {
+            const notes = String(row.notes || "").trim();
+            return (
+              <span className="cell-clip client-notes" title={notes || undefined} tabIndex={notes ? 0 : undefined}>
+                {notes || "—"}
+              </span>
+            );
+          }
+          return (
+            <span className={column.key === "notes" ? "cell-clip" : ""}>
+              {config.key === "requirements" && column.key === "title"
+                ? String(row.title || "Untitled requirement")
+                : valueFor(row, column, lookups)}
+            </span>
+          );
+        },
       })),
       {
         id: "actions",
@@ -433,7 +459,21 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
               </thead>
               <tbody>
                 {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id}>
+                  <tr
+                    key={row.id}
+                    className={rowOpensDetail ? "cursor-pointer focus-visible:bg-[var(--app-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--app-accent)]" : undefined}
+                    tabIndex={rowOpensDetail ? 0 : undefined}
+                    aria-label={rowOpensDetail ? `Open ${config.key === "requirements" ? "requirement" : "property"} ${String(row.original.title || "Untitled record")}` : undefined}
+                    onClick={(event) => {
+                      if (!rowOpensDetail || (event.target as HTMLElement).closest("button, a, input, select, textarea")) return;
+                      router.push(`/workspace/${config.key === "requirements" ? "requirements" : "properties"}/${row.original.id}`);
+                    }}
+                    onKeyDown={(event) => {
+                      if (!rowOpensDetail || event.target !== event.currentTarget || !["Enter", " "].includes(event.key)) return;
+                      event.preventDefault();
+                      router.push(`/workspace/${config.key === "requirements" ? "requirements" : "properties"}/${row.original.id}`);
+                    }}
+                  >
                     {row.getAllCells().map((cell) => (
                       <td key={cell.id}>
                         <table.FlexRender cell={cell} />
