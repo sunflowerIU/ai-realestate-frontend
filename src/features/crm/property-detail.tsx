@@ -39,6 +39,7 @@ import { LoadingIndicator } from "@/features/app/loading-indicator";
 import { provinceNamesByNumber, provinceNumber, resources } from "./config";
 import { RecordForm } from "./record-form";
 import { PropertyMap } from "./property-map";
+import { PropertyMapDialog } from "./property-map-dialog";
 import { propertyCoordinates } from "./property-coordinates";
 
 type Property = RecordRow & {
@@ -102,6 +103,7 @@ export function PropertyDetail({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [actionOpen, setActionOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
   const { data: property, isPending, error, refetch } = useQuery({
     queryKey: ["record", "properties", id],
     queryFn: () => getRecord<Property>("properties", id),
@@ -237,7 +239,11 @@ export function PropertyDetail({ id }: { id: string }) {
               ))}
             </div>
             {mapPosition && <div className="px-7 pb-6 max-[580px]:px-5">
-              <PropertyMap position={mapPosition} />
+              <div className="relative">
+                <PropertyMap position={mapPosition} />
+                <button type="button" className="absolute inset-0 z-[500] w-full cursor-zoom-in rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--app-accent)]" aria-label="Expand property map" onClick={() => setMapOpen(true)} />
+              </div>
+              <p className="mt-2 text-[10px] text-[var(--app-muted)]">Click the map to enlarge it.</p>
               <a className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[var(--app-accent)] hover:underline" href={`https://www.google.com/maps/search/?api=1&query=${mapPosition.latitude}%2C${mapPosition.longitude}`} target="_blank" rel="noopener noreferrer">View in Google Maps <ArrowUpRight size={15} /></a>
             </div>}
           </section>
@@ -272,6 +278,7 @@ export function PropertyDetail({ id }: { id: string }) {
         </aside>
       </div>
 
+      {mapPosition && <PropertyMapDialog open={mapOpen} onOpenChange={setMapOpen} position={mapPosition} />}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent><div className="border-b border-[var(--app-border)] px-9 pt-8 pb-6 max-[580px]:px-5 max-[580px]:pt-6"><div className="text-[10px] font-extrabold tracking-[.18em] text-[var(--app-accent)]">EDIT RECORD</div><DialogTitle>Edit property</DialogTitle><DialogDescription>Update the listing details in your private workspace.</DialogDescription></div><RecordForm config={resources.properties} row={property} onSave={(payload) => save.mutate(payload)} saving={save.isPending} /></DialogContent>
       </Dialog>

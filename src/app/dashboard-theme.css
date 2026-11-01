@@ -544,6 +544,32 @@
   scrollbar-width: thin;
   scrollbar-color: var(--form-scrollbar-thumb) var(--app-soft);
 }
+.dialog-overlay.property-map-overlay {
+  z-index: 80;
+}
+.dialog-content.property-map-dialog {
+  z-index: 81;
+  display: flex;
+  flex-direction: column;
+  width: min(96vw, 1200px);
+  height: min(92svh, 900px);
+  max-height: 92svh;
+  overflow: hidden;
+}
+.property-map-dialog-map {
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+}
+.property-map-dialog .dialog-title {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 34px);
+}
+.property-map-pin {
+  background: none;
+  border: 0;
+  filter: drop-shadow(0 4px 5px #07152966);
+}
 .record-dialog::-webkit-scrollbar {
   width: 10px;
 }

@@ -75,5 +75,10 @@ test("property coordinates show a map and a Google Maps link", async ({ page, co
   await page.route("**/api/data/**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ id, title: "Mapped home", propertyType: "HOUSE", transactionType: "SALE", status: "ACTIVE", latitude: "27.7172", longitude: "85.3240", createdAt: "2026-10-20T04:00:00.000Z", updatedAt: "2026-10-25T04:00:00.000Z" }) }));
   await page.goto(`/workspace/properties/${id}`);
   await expect(page.getByLabel("Property location map")).toBeVisible();
+  await page.getByRole("button", { name: "Expand property map" }).click();
+  await expect(page.getByRole("dialog", { name: "Property location" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Property location" }).getByLabel("Property location map")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Property location" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "View in Google Maps" })).toHaveAttribute("href", "https://www.google.com/maps/search/?api=1&query=27.7172%2C85.324");
 });

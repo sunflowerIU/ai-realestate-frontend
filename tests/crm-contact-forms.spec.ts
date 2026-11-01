@@ -73,7 +73,7 @@ test("saved owner fills the name and land omits building fields", async ({ page,
     expect(payload).not.toHaveProperty(field);
 });
 
-test("property map loads on request and saves a selected location", async ({ page, baseURL }) => {
+test("property map loads on request and saves a selected location", async ({ page, baseURL }, testInfo) => {
   await mockWorkspace(page, baseURL!);
   await page.route("https://*.tile.openstreetmap.org/**", (route) => route.abort());
   await page.goto("/workspace/properties");
@@ -88,10 +88,20 @@ test("property map loads on request and saves a selected location", async ({ pag
   await page.getByLabel("Owner / seller name").fill("Local owner");
   await page.getByLabel("Add map location (optional)").check();
   const map = page.getByLabel("Choose property location on map");
+  await expect(page.getByRole("dialog", { name: "Choose property location" })).toBeVisible();
   await expect(map).toBeVisible();
   await expect(page.getByText("No location selected yet.")).toBeVisible();
-  await map.click({ position: { x: 150, y: 120 } });
+  await expect.poll(() => map.evaluate((element) => element.clientHeight)).toBeGreaterThan(400);
+  if (testInfo.project.name === "mobile") await map.tap();
+  else await map.click();
   await expect(page.getByText(/Selected: 27\./)).toBeVisible();
+  await expect(page.locator(".property-map-pin")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Choose property location" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Add property" })).toBeVisible();
+  await page.getByRole("button", { name: "Change map location" }).click();
+  await expect(map).toBeVisible();
+  await page.getByRole("button", { name: "Done" }).click();
   const request = page.waitForRequest((item) => item.url().endsWith("/api/data/properties") && item.method() === "POST");
   await page.getByRole("button", { name: "Add property" }).last().click();
   const payload = (await request).postDataJSON();
