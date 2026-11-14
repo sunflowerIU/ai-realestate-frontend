@@ -460,7 +460,7 @@ export function RecordForm({
         ))}
       </div>}
       />
-      {config.key === "properties" && <PropertyLocationField position={mapPosition} onChange={setMapPosition} />}
+      {config.key === "properties" && <PropertyLocationField position={mapPosition} onChange={setMapPosition} useCurrentLocation={!row} />}
       <div className="record-form-footer">
         <span>
           Enter times in Nepal time. Dates display in B.S. after saving.

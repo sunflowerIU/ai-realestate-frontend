@@ -58,11 +58,12 @@ function valueFor(row: RecordRow, column: ColumnConfig, lookups: Lookups) {
     return client ? String(client.name || client.id) : `Record ${String(row.clientId).slice(0, 8)}`;
   }
   if (column.kind === "money") return formatNpr(value);
+  if (column.key === "propertyType") return label(value);
   if (column.kind === "date" || column.kind === "datetime")
     return formatBsDate(value, column.kind === "datetime");
   if (column.kind === "land")
     return value
-      ? `${value} ${String(row.landAreaUnit || "").replaceAll("_", " ")}`
+      ? `${value} ${label(row.landAreaUnit)}`
       : "—";
   if (column.kind === "reference") {
     const match = lookups[column.reference || ""]?.find(
@@ -444,7 +445,8 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
             )}
           </div>
         ) : (
-          <div className="table-scroll">
+          <>
+          <div className="table-scroll desktop-table">
             <table className="data-table">
               <thead>
                 {table.getHeaderGroups().map((group) => (
@@ -484,6 +486,43 @@ export function EntityPage({ config }: { config: ResourceConfig }) {
               </tbody>
             </table>
           </div>
+          <div className="mobile-record-list" aria-label={`${config.title} records`}>
+            {table.getRowModel().rows.map((row) => {
+              const cells = row.getAllCells();
+              const statusIndex = config.columns.findIndex((column) => column.key === "status");
+              const detailHref = `/workspace/${config.key === "requirements" ? "requirements" : "properties"}/${row.original.id}`;
+              return (
+                <article className="mobile-record-card" key={row.id}>
+                  <div className="mobile-record-topline">
+                    <span className="mobile-record-number">#{(page - 1) * PAGE_SIZE + row.index + 1}</span>
+                    <div className="mobile-record-top-actions">
+                      {statusIndex > 0 && <table.FlexRender cell={cells[statusIndex + 1]} />}
+                      <table.FlexRender cell={cells[cells.length - 1]} />
+                    </div>
+                  </div>
+                  <h2 className="mobile-record-title"><table.FlexRender cell={cells[1]} /></h2>
+                  <div className="mobile-record-details">
+                    {config.columns.slice(1).map((column, index) => column.key === "status" ? null : (
+                      <div className="mobile-record-detail" key={column.key}>
+                        <span className="mobile-record-label">{column.label}</span>
+                        <div className="mobile-record-value"><table.FlexRender cell={cells[index + 2]} /></div>
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" className="mobile-record-open" onClick={() => {
+                    if (rowOpensDetail) router.push(detailHref);
+                    else {
+                      setSelected(row.original);
+                      setOpen(true);
+                    }
+                  }}>
+                    {rowOpensDetail ? `View ${config.singular}` : `Edit ${config.singular}`} <ArrowRight size={17} />
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+          </>
         )}
         <div className="resource-pagination">
           <span>
