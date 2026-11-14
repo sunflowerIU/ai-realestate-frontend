@@ -153,6 +153,7 @@ export const resources: Record<string, ResourceConfig> = {
       "Record listings with the owner, location, price, and land details that matter in a real conversation.",
     columns: [
       { key: "title", label: "Property" },
+      { key: "propertyType", label: "Property type" },
       { key: "locality", label: "Location" },
       { key: "priceNpr", label: "Price", kind: "money" },
       { key: "landAreaValue", label: "Land", kind: "land" },

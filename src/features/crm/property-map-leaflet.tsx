@@ -12,8 +12,9 @@ const pinIcon = L.divIcon({
   iconAnchor: [20, 46],
 });
 
-export default function PropertyMapLeaflet({ position, onSelect, large = false }: {
+export default function PropertyMapLeaflet({ position, defaultCenter, onSelect, large = false }: {
   position: Coordinates | null;
+  defaultCenter?: Coordinates | null;
   onSelect?: (position: Coordinates) => void;
   large?: boolean;
 }) {
@@ -21,7 +22,8 @@ export default function PropertyMapLeaflet({ position, onSelect, large = false }
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const onSelectRef = useRef(onSelect);
-  const [initialView] = useState(() => ({ center: position ?? KATHMANDU, zoom: position ? 16 : 13 }));
+  const userMovedRef = useRef(false);
+  const [initialView] = useState(() => ({ center: position ?? defaultCenter ?? KATHMANDU, zoom: position ? 16 : defaultCenter ? 15 : 13 }));
 
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
 
@@ -33,6 +35,7 @@ export default function PropertyMapLeaflet({ position, onSelect, large = false }
       scrollWheelZoom: large,
     });
     mapRef.current = map;
+    map.on("dragstart", () => { userMovedRef.current = true; });
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
@@ -84,6 +87,11 @@ export default function PropertyMapLeaflet({ position, onSelect, large = false }
       markerRef.current = null;
     };
   }, [initialView, large]);
+
+  useEffect(() => {
+    if (!defaultCenter || position || !mapRef.current || userMovedRef.current) return;
+    mapRef.current.setView([defaultCenter.latitude, defaultCenter.longitude], 15);
+  }, [defaultCenter, position]);
 
   useEffect(() => {
     const map = mapRef.current;

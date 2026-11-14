@@ -8,10 +8,11 @@ const LeafletMap = dynamic(() => import("./property-map-leaflet"), {
   loading: () => <div className="flex h-full min-h-[290px] items-center justify-center rounded-md bg-[var(--app-soft)] text-xs text-[var(--app-muted)]">Loading map…</div>,
 });
 
-export function PropertyMap({ position, onSelect, large = false }: {
+export function PropertyMap({ position, defaultCenter, onSelect, large = false }: {
   position: Coordinates | null;
+  defaultCenter?: Coordinates | null;
   onSelect?: (position: Coordinates) => void;
   large?: boolean;
 }) {
-  return <LeafletMap position={position} onSelect={onSelect} large={large} />;
+  return <LeafletMap position={position} defaultCenter={defaultCenter} onSelect={onSelect} large={large} />;
 }

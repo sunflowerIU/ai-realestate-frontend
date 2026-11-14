@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("property row opens a detailed listing and archives it", async ({ page, context, baseURL }) => {
+test("property row opens a detailed listing and archives it", async ({ page, context, baseURL, isMobile }) => {
   const id = "00000000-0000-4000-8000-000000000052";
   const ownerId = "00000000-0000-4000-8000-000000000053";
   let archived = false;
@@ -47,13 +47,23 @@ test("property row opens a detailed listing and archives it", async ({ page, con
   });
 
   await page.goto("/workspace/properties");
+  if (isMobile) {
+    const card = page.getByRole("article").filter({ hasText: property.title });
+    await expect(card).toContainText("Property type");
+    await expect(card).toContainText("House");
+    await expect(card).toContainText("NPR 3,50,00,000");
+  } else {
+    await expect(page.getByRole("columnheader", { name: "Property type" })).toBeVisible();
+    await expect(page.getByRole("row", { name: /Sunlit home in Lazimpat/ }).getByRole("cell", { name: "House" })).toBeVisible();
+  }
   await page.getByRole("button", { name: "Record actions" }).click();
   await expect(page.getByRole("menuitem", { name: "Edit" })).toBeVisible();
   await page.getByRole("menuitem", { name: "Edit" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page).toHaveURL(/\/workspace\/properties$/);
   await page.keyboard.press("Escape");
-  await page.getByRole("row", { name: /Sunlit home in Lazimpat/ }).click();
+  if (isMobile) await page.getByRole("article").filter({ hasText: property.title }).getByRole("button", { name: "View property" }).click();
+  else await page.getByRole("row", { name: /Sunlit home in Lazimpat/ }).click();
   await expect(page).toHaveURL(new RegExp(`/workspace/properties/${id}$`));
   await expect(page.getByRole("heading", { name: "Sunlit home in Lazimpat." })).toBeVisible();
   await expect(page.getByText("NPR 3,50,00,000")).toBeVisible();

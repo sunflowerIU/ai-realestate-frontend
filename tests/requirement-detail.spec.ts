@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("buyer requirement opens a complete detail page from the list", async ({ page, context, baseURL }) => {
+test("buyer requirement opens a complete detail page from the list", async ({ page, context, baseURL, isMobile }) => {
   const id = "00000000-0000-4000-8000-000000000041";
   const requirement = {
     id,
@@ -40,7 +40,8 @@ test("buyer requirement opens a complete detail page from the list", async ({ pa
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page).toHaveURL(/\/workspace\/requirements$/);
   await page.keyboard.press("Escape");
-  await page.getByRole("row", { name: /Family home near Boudha/ }).click();
+  if (isMobile) await page.getByRole("article").filter({ hasText: requirement.title }).getByRole("button", { name: "View requirement" }).click();
+  else await page.getByRole("row", { name: /Family home near Boudha/ }).click();
   await expect(page).toHaveURL(new RegExp(`/workspace/requirements/${id}$`));
   await expect(page.getByRole("heading", { name: "Family home near Boudha." })).toBeVisible();
   await expect(page.getByText("Asha Tamang").first()).toBeVisible();

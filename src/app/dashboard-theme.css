@@ -1235,3 +1235,140 @@
     animation: none;
   }
 }
+
+.mobile-record-list {
+  display: none;
+}
+
+@media (max-width: 650px) {
+  .desktop-table {
+    display: none;
+  }
+  .resource-card:has(.mobile-record-list) {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  .resource-card:has(.mobile-record-list) .resource-card-top {
+    min-height: 34px;
+    padding: 0 2px 10px;
+    border: 0;
+  }
+  .mobile-record-list {
+    display: grid;
+    gap: 12px;
+  }
+  .mobile-record-card {
+    min-width: 0;
+    overflow: hidden;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 16px;
+    box-shadow: 0 8px 22px #1723380c;
+  }
+  .mobile-record-topline,
+  .mobile-agent-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px 0;
+  }
+  .mobile-record-number,
+  .mobile-record-label {
+    color: var(--app-muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+  }
+  .mobile-record-number {
+    color: var(--app-accent);
+  }
+  .mobile-record-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .mobile-record-top-actions .row-actions-trigger {
+    width: 34px;
+    height: 34px;
+  }
+  .mobile-record-title {
+    min-width: 0;
+    margin: 7px 16px 15px;
+    color: var(--app-ink);
+    font-size: 18px;
+    font-weight: 750;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+  .mobile-record-title .cell-clip,
+  .mobile-record-value .cell-clip {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+  .mobile-record-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 14px;
+    padding: 16px;
+    background: var(--app-soft);
+  }
+  .mobile-record-detail {
+    min-width: 0;
+  }
+  .mobile-record-label {
+    display: block;
+    margin-bottom: 6px;
+  }
+  .mobile-record-value {
+    color: var(--app-ink);
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+  .mobile-record-value .client-phone-stack {
+    white-space: normal;
+  }
+  .mobile-record-open {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    border: 0;
+    border-top: 1px solid var(--app-border);
+    background: var(--app-surface);
+    color: var(--app-accent);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .mobile-record-open:hover {
+    background: var(--app-soft);
+  }
+  .mobile-agent-heading {
+    justify-content: flex-start;
+    padding-bottom: 15px;
+  }
+  .mobile-agent-heading > div {
+    flex: 1;
+    min-width: 0;
+  }
+  .mobile-agent-heading .mobile-record-title {
+    margin: 0;
+  }
+  .mobile-agent-heading .app-status {
+    flex-shrink: 0;
+  }
+  .resource-card:has(.mobile-record-list) .resource-pagination {
+    margin-top: 8px;
+    padding: 0 2px;
+    border: 0;
+  }
+}

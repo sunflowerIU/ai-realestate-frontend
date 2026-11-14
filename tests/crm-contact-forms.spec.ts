@@ -109,6 +109,40 @@ test("property map loads on request and saves a selected location", async ({ pag
   expect(Number(payload.longitude)).toBeGreaterThan(85);
 });
 
+test("new property map centers on an allowed current location without selecting a pin", async ({ page, context, baseURL }, testInfo) => {
+  await mockWorkspace(page, baseURL!);
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 28.2096, longitude: 83.9856 });
+  await page.route("https://*.tile.openstreetmap.org/**", (route) => route.abort());
+  await page.goto("/workspace/properties");
+  await page.getByRole("button", { name: "Add property" }).first().click();
+  await page.getByLabel("Add map location (optional)").check();
+  const map = page.getByLabel("Choose property location on map");
+  await expect(map).toBeVisible();
+  await expect(page.getByText("Map centered near your current location.", { exact: false })).toBeVisible();
+  await expect(page.getByText("No location selected yet.")).toBeVisible();
+  await expect(page.locator(".property-map-pin")).toHaveCount(0);
+  if (testInfo.project.name === "mobile") await map.tap();
+  else await map.click();
+  await expect(page.getByText(/Selected: 28\.20/)).toBeVisible();
+  await expect(page.locator(".property-map-pin")).toBeVisible();
+});
+
+test("new property map keeps Kathmandu when location permission is denied", async ({ page, context, baseURL }, testInfo) => {
+  await mockWorkspace(page, baseURL!);
+  await context.grantPermissions([]);
+  await page.route("https://*.tile.openstreetmap.org/**", (route) => route.abort());
+  await page.goto("/workspace/properties");
+  await page.getByRole("button", { name: "Add property" }).first().click();
+  await page.getByLabel("Add map location (optional)").check();
+  const map = page.getByLabel("Choose property location on map");
+  await expect(map).toBeVisible();
+  await expect(page.getByText("Map starts in Kathmandu.", { exact: false })).toBeVisible();
+  if (testInfo.project.name === "mobile") await map.tap();
+  else await map.click();
+  await expect(page.getByText(/Selected: 27\.7/)).toBeVisible();
+});
+
 test("buyer requirement keeps contact details and a saved client link", async ({ page, baseURL }) => {
   await mockWorkspace(page, baseURL!);
   await page.goto("/workspace/requirements");
